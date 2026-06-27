@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Boob Tracker</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+      text-align: center;
+      padding: 20px;
+      background: #f8f1f7;
+      margin: 0;
+      touch-action: manipulation;
+    }
+    h1 { color: #c026d3; margin: 10px 0 5px; }
+    button {
+      font-size: 1.4rem;
+      padding: 20px 32px;
+      margin: 12px 8px;
+      border: none;
+      border-radius: 16px;
+      width: 160px;
+    }
+    .left { background: #f472b6; color: white; }
+    .right { background: #a78bfa; color: white; }
+    #timer {
+      font-size: 3.2rem;
+      font-weight: bold;
+      color: #6b21a8;
+      margin: 30px 0;
+      min-height: 90px;
+    }
+    .stop-btn {
+      background: #6b21a8;
+      color: white;
+      font-size: 1.3rem;
+      padding: 16px 50px;
+      border-radius: 9999px;
+    }
+    .log {
+      margin-top: 40px;
+      text-align: left;
+      max-width: 420px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .entry {
+      background: white;
+      padding: 14px 18px;
+      margin: 10px 0;
+      border-radius: 12px;
+      font-size: 1.1rem;
+    }
+  </style>
+</head>
+<body>
+  <h1>🍼 Boob Tracker</h1>
+  <p id="status">Tap side to start feeding</p>
+  
+  <button class="left" onclick="startFeed('Left')">Left</button>
+  <button class="right" onclick="startFeed('Right')">Right</button>
+  
+  <div id="timer">0:00</div>
+  
+  <button class="stop-btn" onclick="stopFeed()">Stop & Log</button>
+
+  <div class="log">
+    <h2>Last 5 Feeds</h2>
+    <div id="history"></div>
+  </div>
+
+  <script>
+    let timerInterval = null;
+    let startTime = null;
+    let currentSide = '';
+
+    function startFeed(side) {
+      if (timerInterval) clearInterval(timerInterval);
+      
+      currentSide = side;
+      startTime = Date.now();
+      
+      document.getElementById('status').textContent = `Feeding ${side}...`;
+      document.getElementById('timer').textContent = '0:00';
+
+      timerInterval = setInterval(() => {
+        const elapsed = Math.floor((Date.now() - startTime) / 1000);
+        const min = Math.floor(elapsed / 60);
+        const sec = elapsed % 60;
+        document.getElementById('timer').textContent = `${min}:${sec.toString().padStart(2, '0')}`;
+      }, 1000);
+    }
+
+    function stopFeed() {
+      if (!startTime) return;
+      
+      clearInterval(timerInterval);
+      
+      const elapsed = Math.floor((Date.now() - startTime) / 1000);
+      const min = Math.floor(elapsed / 60);
+      const sec = elapsed % 60;
+      const duration = `${min}:${sec.toString().padStart(2, '0')}`;
+
+      const timeStr = new Date().toLocaleTimeString([], {hour:'numeric', minute:'2-digit'});
+
+      // Add to history
+      const historyDiv = document.getElementById('history');
+      const entry = document.createElement('div');
+      entry.className = 'entry';
+      entry.innerHTML = `<strong>${currentSide}</strong> — ${duration} <small>(${timeStr})</small>`;
+      
+      historyDiv.insertBefore(entry, historyDiv.firstChild);
+
+      // Keep only last 5 feeds
+      if (historyDiv.children.length > 5) {
+        historyDiv.removeChild(historyDiv.lastChild);
+      }
+
+      // Reset
+      document.getElementById('status').textContent = 'Tap side to start feeding';
+      document.getElementById('timer').textContent = '0:00';
+      startTime = null;
+    }
+  </script>
+</body>
+</html>
