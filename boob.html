@@ -11,69 +11,63 @@
     body {
       font-family: -apple-system, BlinkMacSystemFont, sans-serif;
       text-align: center;
-      padding: 20px;
+      padding: 10px;
       background: linear-gradient(180deg, #f8f1f7, #f3e8ff);
       margin: 0;
       min-height: 100vh;
       touch-action: manipulation;
     }
-    h1 { color: #c026d3; margin: 10px 0 5px; font-size: 2.2rem; }
-    p { color: #6b21a8; margin-bottom: 20px; }
+    h1 { color: #c026d3; margin: 5px 0; font-size: 1.8rem; }
+    p { color: #6b21a8; margin-bottom: 10px; }
     button {
-      font-size: 1.5rem;
-      padding: 22px 32px;
-      margin: 12px 8px;
+      font-size: 1.2rem;
+      padding: 15px 20px;
+      margin: 8px 5px;
       border: none;
-      border-radius: 20px;
-      width: 160px;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+      border-radius: 15px;
+      width: 140px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
     }
     .left { background: #f472b6; color: white; }
     .right { background: #a78bfa; color: white; }
     #timer {
-      font-size: 4rem;
+      font-size: 3rem;
       font-weight: bold;
       color: #6b21a8;
-      margin: 30px 0;
-      min-height: 110px;
-      text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      margin: 15px 0;
     }
     .stop-btn {
       background: #6b21a8;
       color: white;
-      font-size: 1.4rem;
-      padding: 18px 60px;
+      padding: 15px 40px;
       border-radius: 9999px;
-      margin: 10px;
+      width: auto;
     }
     .stats {
-      margin: 25px auto;
-      max-width: 420px;
+      margin: 10px auto;
+      max-width: 400px;
       background: white;
-      padding: 16px;
-      border-radius: 16px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      padding: 10px;
+      border-radius: 12px;
+      font-size: 0.9rem;
     }
     .log {
-      margin-top: 30px;
+      margin-top: 15px;
       text-align: left;
-      max-width: 460px;
+      max-width: 400px;
       margin-left: auto;
       margin-right: auto;
     }
     .entry {
       background: white;
-      padding: 16px 20px;
-      margin: 12px 0;
-      border-radius: 16px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      padding: 8px 16px;
+      margin: 6px 0;
+      border-radius: 12px;
+      font-size: 0.95rem;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.05);
     }
-    .controls button {
-      font-size: 1rem;
-      padding: 10px 18px;
-      width: auto;
-      margin: 0 6px;
-    }
+    .controls { text-align: center; margin: 15px 0; }
+    .controls button { font-size: 0.9rem; padding: 8px 15px; width: auto; }
   </style>
 </head>
 <body>
@@ -89,12 +83,12 @@
   <div class="stats" id="stats">Loading stats...</div>
 
   <div class="log">
-    <div class="controls" style="text-align:center;margin:15px 0;">
-      <button onclick="exportCSV()">📤 Export CSV</button>
-      <button onclick="clearHistory()" style="background:#ef4444;color:white;">🗑️ Clear</button>
-    </div>
     <h2>Last Feeds</h2>
     <div id="history"></div>
+    <div class="controls">
+      <button onclick="exportCSV()">📤 Export</button>
+      <button onclick="clearHistory()" style="background:#ef4444;color:white;">🗑️ Clear</button>
+    </div>
   </div>
 
   <script>
@@ -123,7 +117,7 @@
         const elapsed = Math.floor((Date.now() - startTime) / 1000);
         const min = Math.floor(elapsed / 60);
         const sec = elapsed % 60;
-        document.getElementById('timer').textContent = `\( {min}: \){sec.toString().padStart(2, '0')}`;
+        document.getElementById('timer').textContent = `${min}:${sec.toString().padStart(2, '0')}`;
       }, 1000);
     }
 
@@ -134,7 +128,7 @@
       const elapsed = Math.floor((Date.now() - startTime) / 1000);
       const min = Math.floor(elapsed / 60);
       const sec = elapsed % 60;
-      const duration = `\( {min}: \){sec.toString().padStart(2, '0')}`;
+      const duration = `${min}:${sec.toString().padStart(2, '0')}`;
       const timeStr = new Date().toLocaleTimeString([], {hour:'numeric', minute:'2-digit'});
 
       history.unshift({
@@ -161,7 +155,7 @@
       history.forEach(entry => {
         const div = document.createElement('div');
         div.className = 'entry';
-        div.innerHTML = `<strong>${entry.side}</strong> — \( {entry.duration} <small>( \){entry.time})</small>`;
+        div.innerHTML = `<strong>${entry.side}</strong> — ${entry.duration} <small>(${entry.time})</small>`;
         container.appendChild(div);
       });
     }
@@ -177,8 +171,8 @@
       const avgSec = avg % 60;
 
       document.getElementById('stats').innerHTML = `
-        <strong>Total time:</strong> ${Math.floor(totalSec/60)} minutes<br>
-        <strong>Average feed:</strong> \( {avgMin}: \){avgSec.toString().padStart(2, '0')}
+        <strong>Total:</strong> ${Math.floor(totalSec/60)}m | 
+        <strong>Avg:</strong> ${avgMin}:${avgSec.toString().padStart(2, '0')}
       `;
     }
 
@@ -186,7 +180,7 @@
       if (history.length === 0) return alert("No feeds logged yet!");
       let csv = "Date,Time,Side,Duration\n";
       history.forEach(h => {
-        csv += `\( {new Date(h.timestamp).toLocaleDateString()}, \){h.time},\( {h.side}, \){h.duration}\n`;
+        csv += `${new Date(h.timestamp).toLocaleDateString()},${h.time},${h.side},${h.duration}\n`;
       });
       const blob = new Blob([csv], { type: 'text/csv' });
       const url = URL.createObjectURL(blob);
@@ -205,7 +199,6 @@
       }
     }
 
-    // Initialize
     loadHistory();
     renderHistory();
     updateStats();
