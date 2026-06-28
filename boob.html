@@ -3,54 +3,76 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Boob Tracker</title>
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <title>Boob Tracker 🍼</title>
+
   <style>
     body {
       font-family: -apple-system, BlinkMacSystemFont, sans-serif;
       text-align: center;
       padding: 20px;
-      background: #f8f1f7;
+      background: linear-gradient(180deg, #f8f1f7, #f3e8ff);
       margin: 0;
+      min-height: 100vh;
       touch-action: manipulation;
     }
-    h1 { color: #c026d3; margin: 10px 0 5px; }
+    h1 { color: #c026d3; margin: 10px 0 5px; font-size: 2.2rem; }
+    p { color: #6b21a8; margin-bottom: 20px; }
     button {
-      font-size: 1.4rem;
-      padding: 20px 32px;
+      font-size: 1.5rem;
+      padding: 22px 32px;
       margin: 12px 8px;
       border: none;
-      border-radius: 16px;
+      border-radius: 20px;
       width: 160px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
     }
     .left { background: #f472b6; color: white; }
     .right { background: #a78bfa; color: white; }
     #timer {
-      font-size: 3.2rem;
+      font-size: 4rem;
       font-weight: bold;
       color: #6b21a8;
       margin: 30px 0;
-      min-height: 90px;
+      min-height: 110px;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
     .stop-btn {
       background: #6b21a8;
       color: white;
-      font-size: 1.3rem;
-      padding: 16px 50px;
+      font-size: 1.4rem;
+      padding: 18px 60px;
       border-radius: 9999px;
+      margin: 10px;
+    }
+    .stats {
+      margin: 25px auto;
+      max-width: 420px;
+      background: white;
+      padding: 16px;
+      border-radius: 16px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
     }
     .log {
-      margin-top: 40px;
+      margin-top: 30px;
       text-align: left;
-      max-width: 420px;
+      max-width: 460px;
       margin-left: auto;
       margin-right: auto;
     }
     .entry {
       background: white;
-      padding: 14px 18px;
-      margin: 10px 0;
-      border-radius: 12px;
-      font-size: 1.1rem;
+      padding: 16px 20px;
+      margin: 12px 0;
+      border-radius: 16px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+    .controls button {
+      font-size: 1rem;
+      padding: 10px 18px;
+      width: auto;
+      margin: 0 6px;
     }
   </style>
 </head>
@@ -58,15 +80,20 @@
   <h1>🍼 Boob Tracker</h1>
   <p id="status">Tap side to start feeding</p>
   
-  <button class="left" onclick="startFeed('Left')">Left</button>
-  <button class="right" onclick="startFeed('Right')">Right</button>
+  <button class="left" onclick="startFeed('Left')">Left ⬅️</button>
+  <button class="right" onclick="startFeed('Right')">Right ➡️</button>
   
   <div id="timer">0:00</div>
-  
   <button class="stop-btn" onclick="stopFeed()">Stop & Log</button>
 
+  <div class="stats" id="stats">Loading stats...</div>
+
   <div class="log">
-    <h2>Last 5 Feeds</h2>
+    <div class="controls" style="text-align:center;margin:15px 0;">
+      <button onclick="exportCSV()">📤 Export CSV</button>
+      <button onclick="clearHistory()" style="background:#ef4444;color:white;">🗑️ Clear</button>
+    </div>
+    <h2>Last Feeds</h2>
     <div id="history"></div>
   </div>
 
@@ -74,13 +101,21 @@
     let timerInterval = null;
     let startTime = null;
     let currentSide = '';
+    let history = [];
+
+    function loadHistory() {
+      const saved = localStorage.getItem('boobHistory');
+      if (saved) history = JSON.parse(saved);
+    }
+
+    function saveHistory() {
+      localStorage.setItem('boobHistory', JSON.stringify(history));
+    }
 
     function startFeed(side) {
       if (timerInterval) clearInterval(timerInterval);
-      
       currentSide = side;
       startTime = Date.now();
-      
       document.getElementById('status').textContent = `Feeding ${side}...`;
       document.getElementById('timer').textContent = '0:00';
 
@@ -88,40 +123,92 @@
         const elapsed = Math.floor((Date.now() - startTime) / 1000);
         const min = Math.floor(elapsed / 60);
         const sec = elapsed % 60;
-        document.getElementById('timer').textContent = `${min}:${sec.toString().padStart(2, '0')}`;
+        document.getElementById('timer').textContent = `\( {min}: \){sec.toString().padStart(2, '0')}`;
       }, 1000);
     }
 
     function stopFeed() {
       if (!startTime) return;
-      
       clearInterval(timerInterval);
       
       const elapsed = Math.floor((Date.now() - startTime) / 1000);
       const min = Math.floor(elapsed / 60);
       const sec = elapsed % 60;
-      const duration = `${min}:${sec.toString().padStart(2, '0')}`;
-
+      const duration = `\( {min}: \){sec.toString().padStart(2, '0')}`;
       const timeStr = new Date().toLocaleTimeString([], {hour:'numeric', minute:'2-digit'});
 
-      // Add to history
-      const historyDiv = document.getElementById('history');
-      const entry = document.createElement('div');
-      entry.className = 'entry';
-      entry.innerHTML = `<strong>${currentSide}</strong> — ${duration} <small>(${timeStr})</small>`;
-      
-      historyDiv.insertBefore(entry, historyDiv.firstChild);
+      history.unshift({
+        side: currentSide,
+        duration: duration,
+        time: timeStr,
+        timestamp: Date.now()
+      });
 
-      // Keep only last 5 feeds
-      if (historyDiv.children.length > 5) {
-        historyDiv.removeChild(historyDiv.lastChild);
-      }
+      if (history.length > 30) history.pop();
 
-      // Reset
+      saveHistory();
+      renderHistory();
+      updateStats();
+
       document.getElementById('status').textContent = 'Tap side to start feeding';
       document.getElementById('timer').textContent = '0:00';
       startTime = null;
     }
+
+    function renderHistory() {
+      const container = document.getElementById('history');
+      container.innerHTML = '';
+      history.forEach(entry => {
+        const div = document.createElement('div');
+        div.className = 'entry';
+        div.innerHTML = `<strong>${entry.side}</strong> — \( {entry.duration} <small>( \){entry.time})</small>`;
+        container.appendChild(div);
+      });
+    }
+
+    function updateStats() {
+      const totalSec = history.reduce((sum, e) => {
+        const [m, s] = e.duration.split(':').map(Number);
+        return sum + (m * 60) + s;
+      }, 0);
+      
+      const avg = history.length ? Math.round(totalSec / history.length) : 0;
+      const avgMin = Math.floor(avg / 60);
+      const avgSec = avg % 60;
+
+      document.getElementById('stats').innerHTML = `
+        <strong>Total time:</strong> ${Math.floor(totalSec/60)} minutes<br>
+        <strong>Average feed:</strong> \( {avgMin}: \){avgSec.toString().padStart(2, '0')}
+      `;
+    }
+
+    function exportCSV() {
+      if (history.length === 0) return alert("No feeds logged yet!");
+      let csv = "Date,Time,Side,Duration\n";
+      history.forEach(h => {
+        csv += `\( {new Date(h.timestamp).toLocaleDateString()}, \){h.time},\( {h.side}, \){h.duration}\n`;
+      });
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `boob-tracker-${new Date().toISOString().slice(0,10)}.csv`;
+      a.click();
+    }
+
+    function clearHistory() {
+      if (confirm("Clear ALL history? This cannot be undone.")) {
+        history = [];
+        saveHistory();
+        renderHistory();
+        updateStats();
+      }
+    }
+
+    // Initialize
+    loadHistory();
+    renderHistory();
+    updateStats();
   </script>
 </body>
 </html>
